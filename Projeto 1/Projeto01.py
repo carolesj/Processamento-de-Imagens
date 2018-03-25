@@ -93,7 +93,7 @@ def digitaliza(normalizada, tamc, tamn, nbitspp):
             inicio_m = int(i * lado_matriz)
             fim_m = inicio_m + lado_matriz
             inicio_n = int(j * lado_matriz)
-            fim_n = inicio_m + lado_matriz
+            fim_n = inicio_n + lado_matriz
             digitalizada[i][j] = np.amax(normalizada[inicio_m:fim_m,inicio_n:fim_n])
             digitalizada[i][j] = digitalizada[i][j] * (2**nbitspp) / maximo
     return digitalizada
@@ -136,7 +136,7 @@ def main():
     digitalizada = digitaliza(normalizada, tamc, tamn, nbitspp)
     erro = compara(carregada, digitalizada, tamn)
 
-    print(erro)
+    print("%.4f" % erro)
 
 
 if __name__ == '__main__':
