@@ -103,8 +103,7 @@ def compara(lida, digitalizada, tamn):
     erro = 0
     for i in range(tamn):
         for j in range(tamn):
-            erro = erro + digitalizada[i][j] - lida[i][j]
-    erro = erro ** 2
+            erro = erro + ((digitalizada[i][j] - lida[i][j]) ** 2)
     erro = np.sqrt(erro)
 
     return erro
