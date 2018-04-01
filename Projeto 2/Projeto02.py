@@ -107,7 +107,7 @@ def _ajuste_gama(img, expoente):
     ajustada = np.zeros(img.shape)
     for i in range(img.shape[0]):
         for j in range(img.shape[1]):
-            ajustada[i][j] = ((img[i][j]/255)**expoente) * 255
+            ajustada[i][j] = np.floor(((img[i][j]/255)**expoente) * 255)
 
     return img
 
@@ -141,8 +141,8 @@ def superresolucao(processadas):
     # em cada quadrante da imagem da superresolução
     # [[img1, img3],
     #   [img2, img4]]
-    for i in range(0, xsr - acrescimo_lateral, 2):
-        for j in range(0, ysr - acrescimo_lateral, 2):
+    for i in range(0, xsr, 2):
+        for j in range(0, ysr, 2):
             gerada[i][j] = (img1[int(np.floor(i/2))][int(np.floor(j/2))]).astype(np.uint8)
             gerada[i][j + 1] = (img2[int(np.floor(i/2))][int(np.floor(j/2))]).astype(np.uint8)
             gerada[i + 1][j] = (img3[int(np.floor(i/2))][int(np.floor(j/2))]).astype(np.uint8)
@@ -157,8 +157,8 @@ def rmse(gerada, imghq):
 
     for i in range(x):
         for j in range(y):
-            erro += ((imghq[i][j] - gerada[i][j]) ** 2) * (1/x*y)
-    erro = np.sqrt(erro)
+            erro += (imghq[i][j] - gerada[i][j]) ** 2
+    erro = np.sqrt(erro) * (1/(x*y))
 
     return erro
 
@@ -188,13 +188,13 @@ def main():
     erro = rmse(gerada, imghq)
 
     print("%.4f" % erro)
+
     '''
     plt.title("Teste de Rorschach")
     plt.imshow(gerada, cmap='gray')
     plt.axis('off')
     plt.show()
     '''
-
 
 if __name__ == '__main__':
     main()
