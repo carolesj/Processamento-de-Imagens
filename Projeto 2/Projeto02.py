@@ -5,18 +5,11 @@
     2018/1
     Trabalho 2 - Realce e Superresolução
 """
-'''
-    TO DO:
-        Ajuste gama
-        Superresolução
-        Cálculo do erro
-'''
-
 
 
 import imageio
 import numpy as np
-import matplotlib as plt
+# import matplotlib.pyplot as plt
 
 
 # calcula o histograma para uma imagem individualmente
@@ -70,13 +63,13 @@ def _equaliza_histograma_individual(img):
 
 
 # equaliza cada imagem individualmente e retorna os resuldados
-def equalizacao_histograma_individual(img1, img2, img3, img4):
+def equaliza_histograma_individual(img1, img2, img3, img4):
     equalizada1 = _equaliza_histograma_individual(img1)
     equalizada2 = _equaliza_histograma_individual(img2)
     equalizada3 = _equaliza_histograma_individual(img3)
     equalizada4 = _equaliza_histograma_individual(img4)
 
-    return (equalizada1, equalizada2, equalizada3, equalizada4)
+    return equalizada1, equalizada2, equalizada3, equalizada4
 
 
 def equaliza_histograma_conjunto(img1, img2, img3, img4):
@@ -105,26 +98,76 @@ def equaliza_histograma_conjunto(img1, img2, img3, img4):
         equalizada3[np.where(img3 == i)] = valor_eq
         equalizada4[np.where(img4 == i)] = valor_eq
 
-    return (equalizada1, equalizada2, equalizada3, equalizada4)
+    return equalizada1, equalizada2, equalizada3, equalizada4
 
 
+# percorre toda a imagem e aplica pixel a pixel a fórmula do ajuste
+# gama baseada no expoente dado como entrada
+def _ajuste_gama(img, expoente):
+    ajustada = np.zeros(img.shape)
+    for i in range(img.shape[0]):
+        for j in range(img.shape[1]):
+            ajustada[i][j] = ((img[i][j]/255)**expoente) * 255
+
+    return img
+
+
+# chama o ajuste gama par cada uma das imagens
 def ajuste_gamma(img1, img2, img3, img4, gama):
-    return
+    expoente = 1 / gama
+    img1processada = _ajuste_gama(img1, expoente)
+    img2processada = _ajuste_gama(img2, expoente)
+    img3processada = _ajuste_gama(img3, expoente)
+    img4processada = _ajuste_gama(img4, expoente)
+
+    return img1processada, img2processada, img3processada, img4processada
 
 
-def superresolucao(img1, img2, img3, img4):
-    return
+def superresolucao(processadas):
+    x, y = processadas[0].shape
+    # o lado da imagem gerada será o dobro do lado das imagens base
+    # porque para cada pixel original haverá 4
+    acrescimo_lateral = 2
+    xsr = x * acrescimo_lateral
+    ysr = y * acrescimo_lateral
+    gerada = np.zeros([xsr, ysr])
+    # recupera cada imagem das tuplas retornadas
+    img1 = processadas[0]
+    img2 = processadas[1]
+    img3 = processadas[2]
+    img4 = processadas[3]
+
+    # posiciona os pixels retirados das imagens originais da seguinte forma
+    # em cada quadrante da imagem da superresolução
+    # [[img1, img3],
+    #   [img2, img4]]
+    for i in range(0, xsr - acrescimo_lateral, 2):
+        for j in range(0, ysr - acrescimo_lateral, 2):
+            gerada[i][j] = (img1[int(np.floor(i/2))][int(np.floor(j/2))]).astype(np.uint8)
+            gerada[i][j + 1] = (img2[int(np.floor(i/2))][int(np.floor(j/2))]).astype(np.uint8)
+            gerada[i + 1][j] = (img3[int(np.floor(i/2))][int(np.floor(j/2))]).astype(np.uint8)
+            gerada[i + 1][j + 1] = (img4[int(np.floor(i/2))][int(np.floor(j/2))]).astype(np.uint8)
+
+    return gerada
 
 
 def rmse(gerada, imghq):
-    return
+    x, y = imghq.shape
+    erro = 0
+
+    for i in range(x):
+        for j in range(y):
+            erro += ((imghq[i][j] - gerada[i][j]) ** 2) * (1/x*y)
+    erro = np.sqrt(erro)
+
+    return erro
 
 
 def main():
-    nome_base = input()
-    nome_hq = input()
+    nome_base = str(input()).rstrip()
+    nome_hq = str(input()).rstrip()
     realce = int(input())
-    gama = input()
+    gama = float(input())
 
     img1 = imageio.imread(nome_base + '1.png')
     img2 = imageio.imread(nome_base + '2.png')
@@ -133,16 +176,26 @@ def main():
     imghq = imageio.imread(nome_hq + '.png')
 
     if realce == 1:
-        equalizacao_histograma_individual(img1, img2, img3, img4)
+        processadas = equaliza_histograma_individual(img1, img2, img3, img4)
     elif realce == 2:
-        equalizacao_histograma_conjunto(img1, img2, img3, img4)
+        processadas = equaliza_histograma_conjunto(img1, img2, img3, img4)
     elif realce == 3:
-        ajuste_gamma(img1, img2, img3, img4, gama)
+        processadas = ajuste_gamma(img1, img2, img3, img4, gama)
+    else:
+        processadas = (img1, img2, img3, img4)
 
-    gerada = superresolucao(img1, img2, img3, img4)
+    gerada = superresolucao(processadas)
     erro = rmse(gerada, imghq)
 
     print("%.4f" % erro)
+    '''
+    plt.title("Teste de Rorschach")
+    plt.imshow(gerada, cmap='gray')
+    plt.axis('off')
+    plt.show()
+    '''
+
 
 if __name__ == '__main__':
     main()
+
