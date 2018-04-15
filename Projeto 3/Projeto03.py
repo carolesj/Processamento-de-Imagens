@@ -67,7 +67,7 @@ def tdf(unidimensional, tamv):
     transformado = np.zeros(tamv, dtype=np.complex64)
     x = np.arange(tamv)
 
-    for freq in np.arange(tamv):
+    for freq in np.arange(1, tamv):
         transformado[freq] = np.sum(np.multiply(unidimensional, np.exp((-1j*2*np.pi*freq*x)/freq)))
 
     return transformado
@@ -78,7 +78,7 @@ def tdfi(transformado, tamv):
     unidimensional = np.zeros(tamv, dtype=np.float32)
     freq = np.arange(tamv)
 
-    for i in np.arange(tamv):
+    for i in np.arange(1, tamv):
         unidimensional[i] = np.real(np.sum(np.multiply(transformado, np.exp((1j*2*np.pi*freq*i)/tamv))))
 
     return unidimensional/tamv
@@ -86,12 +86,12 @@ def tdfi(transformado, tamv):
 
 # realiza a convolução no domínio da frequência
 def dominiofrequencia(vetor, tamv, pesos, tamp):
-    dif = tamv - tamp
-    difv = np.zeros(dif)
-    pesos += difv
+    pesosv = np.zeros(tamv)
+    for i in range(tamp):
+        pesosv[i] = pesos[i]
 
     vetort = tdf(vetor, tamv)
-    pesost = tdf(pesos, tamp)
+    pesost = tdf(pesosv, tamv)
 
     resultado = np.multiply(vetort, pesost)
     resultado = tdfi(resultado, tamv)
