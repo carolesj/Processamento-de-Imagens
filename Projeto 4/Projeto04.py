@@ -11,6 +11,66 @@ import numpy as np
 import imageio
 
 
+def filtragem(imagem, filtro):
+    filtroexpandido = np.zeros(imagem.shape)
+    resultante = np.zeros(imagem.shape)
+    for i in range(filtro.shape[0]):
+        for j in range(filtro.shape[1]):
+            filtroexpandido[i][j] = filtro[i][j]
+    filtroexpandido = np.fft.fft2(filtroexpandido)
+    resultante = np.fft.fft2(imagem)
+    for i in range(imagem.shape[0]):
+        for j in range(imagem.shape[1]):
+            resultante[i][j] *= filtroexpandido[i][j]
+
+    return resultante
+
+
+
+# apenas aplica a formula para achar o filtro
+def _laplaciana_gaussiana(inicio, fim, sigma):
+    # os membros foram separados para visualização mais simples
+    membro1 = -(1 / np.pi * (sigma**4))
+    membro2 = 1-(inicio**2 + fim**2) / (2*(sigma ** 2))
+    membro3 = np.exp(-((inicio**2 + fim**2) / 2 * (sigma**2)))
+
+    return membro1 * membro2 * membro3
+
+
+def normalizalg(filtro, tamfiltro):
+    negativos, positivos = 0, 0
+    for i in range(tamfiltro):
+        for j in range(tamfiltro):
+            if filtro[i][j] < 0:
+                negativos += filtro[i][j]
+            else:
+                positivos += filtro[i][j]
+    for i in range(tamfiltro):
+        for j in range(tamfiltro):
+            if filtro[i][j] < 0:
+                filtro[i][j] *= (-positivos/negativos)
+    return
+
+
+def laplaciana_gaussiana(tamfiltro, sigma):
+    filtro = np.zeros([tamfiltro, tamfiltro])
+    # acha qual deve ser o valor de distância entre uma posição e outra
+    # pra que elas sejam uniformemente distribuidas
+    if tamfiltro % 2 == 0:
+        passo = 10 / 2 * (tamfiltro - 1)
+    else:
+        passo = 10 / (tamfiltro - 1)
+
+    #preenche o filtro utilizando a função descrita na especificação
+    for i in range(tamfiltro):
+        for j in range(tamfiltro):
+            filtro[i][j] = _laplaciana_gaussiana((-5 + i*passo), (-5 + j*passo), sigma)
+
+    normalizalg(filtro, tamfiltro)
+    return filtro
+
+
+
 def convolucao(imagem, filtro):
     xim, yim = imagem.shape()
     xf, yf, = filtro.shape()
@@ -49,16 +109,16 @@ def operador_sobel(imagem):
             resultante[i][j] = np.sqrt((imagemx[i][j] ** 2) + (imagemy[i][j] ** 2))
 
     # aplica a transformada discreta de fourier em duas dimensões
-    resultante = np.real(np.fft2(resultante))
+    resultante = np.fft2(resultante)
 
     return resultante
 
 
 def cortes(imagem, indicecortes):
-    x, y = imagem.shape()
-
-    corte1 = imagem[0:x/2, 0:y/2]
-    x1, y1 = corte1.shape()
+    x, y = imagem.shape
+    x, y = int(x/2), int(y/2)
+    corte1 = imagem[0:x, 0:y]
+    x1, y1 = corte1.shape
     indicecortes[0] *= y1
     indicecortes[1] *= y1
     indicecortes[2] *= x1
@@ -116,20 +176,23 @@ def main ():
     nome_labels = input()
 
     # carregando dados com base na entrada
-    indicecortes = (float(c[1]), float(c[2]), float(c[3]), float(c[4]))
+    indicecortes = (float(c[0]), float(c[1]), float(c[2]), float(c[3]))
     imagem = imageio.imread(nome_imagem)
     dataset = np.load(nome_dataset)
     labels = np.load(nome_labels)
 
     if metodo == 1:
+        processada = filtragem(imagem, filtro)
     elif metodo == 2:
+        filtro = laplaciana_gaussiana(tamfiltro, sigma)
+        processada = filtragem(imagem, filtro)
     else:
         processada = operador_sobel(imagem)
 
     quadrante = cortes(processada, indicecortes)
     resultado = NN(quadrante, dataset, labels)
 
-    print(resultado[0]\n resultado[1])
+    print(resultado[0] + "\n" + resultado[1])
 
 if __name__ == '__main__':
     main()
